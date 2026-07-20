@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getCurrentUser } from "~/auth";
 
 // --- Server Functions ---
 
@@ -57,6 +58,12 @@ export const Route = createFileRoute("/")({
 // --- Components ---
 
 function NavBar({ businessName }: { businessName: string }) {
+  const [user, setUser] = useState<{ email: string } | null>(null);
+
+  useEffect(() => {
+    getCurrentUser().then(setUser).catch(() => setUser(null));
+  }, []);
+
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-slate-950/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -70,12 +77,21 @@ function NavBar({ businessName }: { businessName: string }) {
           <a href="#features" className="transition-colors hover:text-white">Features</a>
           <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
         </div>
-        <a
-          href="#waitlist"
-          className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40 hover:brightness-110"
-        >
-          Get Started
-        </a>
+        {user ? (
+          <Link
+            to="/app"
+            className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40 hover:brightness-110"
+          >
+            Dashboard
+          </Link>
+        ) : (
+          <a
+            href="#waitlist"
+            className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40 hover:brightness-110"
+          >
+            Get Started
+          </a>
+        )}
       </div>
     </nav>
   );
