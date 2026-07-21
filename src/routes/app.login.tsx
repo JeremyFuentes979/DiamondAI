@@ -37,10 +37,8 @@ function LoginPage() {
             to="/"
             className="inline-flex items-center gap-2 text-xl font-bold text-white"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 text-sm font-black text-slate-950">
-              &#9670;
-            </span>
-            Diamond AI
+            <img src="/logo.png" alt="SwingSense" class="nav-logo" />
+            SwingSense
           </Link>
         </div>
 
@@ -71,7 +69,7 @@ function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2.5 text-white placeholder-slate-500 outline-none transition-all focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
+                className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2.5 text-white placeholder-slate-500 outline-none transition-all focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
                 placeholder="you@example.com"
               />
             </div>
@@ -89,14 +87,14 @@ function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2.5 text-white placeholder-slate-500 outline-none transition-all focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
+                className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2.5 text-white placeholder-slate-500 outline-none transition-all focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
                 placeholder="••••••••"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 py-2.5 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:brightness-110 disabled:opacity-60"
+              className="w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 py-2.5 font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:brightness-110 disabled:opacity-60"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
@@ -106,7 +104,7 @@ function LoginPage() {
             Don't have an account?{" "}
             <Link
               to="/app/signup"
-              className="font-medium text-blue-400 transition-colors hover:text-blue-300"
+              className="font-medium text-amber-400 transition-colors hover:text-amber-300"
             >
               Sign up
             </Link>

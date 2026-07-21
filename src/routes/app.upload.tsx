@@ -272,7 +272,7 @@ function UploadPage() {
                 onClick={() => setSportType(opt.value)}
                 className={`rounded-xl border px-4 py-4 text-center transition-all ${
                   sportType === opt.value
-                    ? "border-blue-500/50 bg-blue-500/10 text-white shadow-lg shadow-blue-500/10"
+                    ? "border-amber-500/50 bg-amber-500/10 text-white shadow-lg shadow-amber-500/10"
                     : "border-white/5 bg-slate-900/60 text-slate-400 hover:border-white/10 hover:text-white"
                 }`}
               >
@@ -296,7 +296,7 @@ function UploadPage() {
                 onClick={() => setActionType(opt.value)}
                 className={`rounded-xl border px-3 py-4 text-center transition-all ${
                   actionType === opt.value
-                    ? "border-blue-500/50 bg-blue-500/10 text-white shadow-lg shadow-blue-500/10"
+                    ? "border-amber-500/50 bg-amber-500/10 text-white shadow-lg shadow-amber-500/10"
                     : "border-white/5 bg-slate-900/60 text-slate-400 hover:border-white/10 hover:text-white"
                 }`}
               >
@@ -322,7 +322,7 @@ function UploadPage() {
             onClick={() => fileInputRef.current?.click()}
             className={`cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all ${
               dragOver
-                ? "border-blue-500/50 bg-blue-500/5"
+                ? "border-amber-500/50 bg-amber-500/5"
                 : file
                   ? "border-emerald-500/30 bg-emerald-500/5"
                   : "border-white/10 bg-slate-900/40 hover:border-white/20"
@@ -388,11 +388,11 @@ function UploadPage() {
               <span className="text-slate-400">
                 {statusText || (progress < 90 ? "Reading file..." : "Saving...")}
               </span>
-              <span className="text-blue-400">{progress}%</span>
+              <span className="text-amber-400">{progress}%</span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300"
+                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -403,7 +403,7 @@ function UploadPage() {
         <button
           type="submit"
           disabled={uploading}
-          className="w-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 py-3 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:brightness-110 disabled:opacity-60"
+          className="w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 py-3 font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:brightness-110 disabled:opacity-60"
         >
           {uploading ? "Uploading..." : "Upload & Analyze"}
         </button>

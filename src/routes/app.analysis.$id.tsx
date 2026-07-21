@@ -73,7 +73,7 @@ function AnalysisPage() {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-slate-950">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
           <p className="mt-4 text-sm text-slate-400">Loading analysis...</p>
         </div>
       </main>
@@ -87,7 +87,7 @@ function AnalysisPage() {
           <p className="text-red-400">{error}</p>
           <Link
             to="/app"
-            className="mt-4 inline-block text-sm text-blue-400 hover:text-blue-300"
+            className="mt-4 inline-block text-sm text-amber-400 hover:text-amber-300"
           >
             Back to Dashboard
           </Link>
@@ -209,7 +209,7 @@ function AnalysisPage() {
                           ) : (
                             <div>
                               {item.category && (
-                                <p className="text-xs font-semibold uppercase text-blue-400">
+                                <p className="text-xs font-semibold uppercase text-amber-400">
                                   {item.category}
                                 </p>
                               )}
@@ -232,7 +232,7 @@ function AnalysisPage() {
                           key={key}
                           className="rounded-lg border border-white/5 bg-slate-800/50 p-4"
                         >
-                          <p className="text-xs font-semibold uppercase text-blue-400">
+                          <p className="text-xs font-semibold uppercase text-amber-400">
                             {key.replace(/_/g, " ")}
                           </p>
                           <p className="mt-1 text-sm text-slate-300">
@@ -254,7 +254,7 @@ function AnalysisPage() {
             <div className="mt-8 flex gap-3">
               <Link
                 to="/app/upload"
-                className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:brightness-110"
+                className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:brightness-110"
               >
                 Upload Another
               </Link>
@@ -268,7 +268,7 @@ function AnalysisPage() {
           </div>
         ) : video.status === "pending" || video.status === "processing" ? (
           <div className="py-10 text-center">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
             <h2 className="mt-6 text-lg font-semibold text-white">
               {video.status === "processing"
                 ? "Analysis in Progress"
@@ -306,7 +306,7 @@ function AnalysisPage() {
             </p>
             <Link
               to="/app/upload"
-              className="mt-4 inline-block text-sm font-medium text-blue-400 hover:text-blue-300"
+              className="mt-4 inline-block text-sm font-medium text-amber-400 hover:text-amber-300"
             >
               Upload Again
             </Link>

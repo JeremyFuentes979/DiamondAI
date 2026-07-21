@@ -110,7 +110,7 @@ function AppLayout() {
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-slate-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
       </div>
     );
   }
@@ -133,15 +133,13 @@ function AppLayout() {
             to="/app"
             className="flex items-center gap-2 text-lg font-bold text-white"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 text-xs font-black text-slate-950">
-              &#9670;
-            </span>
-            Diamond AI
+            <img src="/logo.png" alt="SwingSense" class="nav-logo" />
+            SwingSense
           </Link>
           <div className="flex items-center gap-4">
             <Link
               to="/app/upload"
-              className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-1.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:brightness-110"
+              className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-1.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition-all hover:brightness-110"
             >
               New Analysis
             </Link>
@@ -251,7 +249,7 @@ function Dashboard({ user }: { user: User | null }) {
         </h2>
         {statsLoading ? (
           <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-10 text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
           </div>
         ) : stats.recentAnalyses.length > 0 ? (
           <div className="space-y-3">
@@ -293,7 +291,7 @@ function Dashboard({ user }: { user: User | null }) {
                       Complete
                     </span>
                   ) : analysis.status === "processing" ? (
-                    <span className="text-xs font-medium text-blue-400">
+                    <span className="text-xs font-medium text-amber-400">
                       Processing
                     </span>
                   ) : analysis.status === "pending" ? (
@@ -351,7 +349,7 @@ function Dashboard({ user }: { user: User | null }) {
             </p>
             <Link
               to="/app/upload"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:brightness-110"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition-all hover:brightness-110"
             >
               <svg
                 className="h-4 w-4"
