@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { getCurrentUser } from "~/auth";
 import { sql } from "~/db";
 import { runAnalysis } from "~/lib/analysis";
+import { checkAndIncrementAnalysisLimit } from "~/lib/subscription";
 
 const UPLOAD_DIR = "/home/team/shared/uploads";
 
@@ -158,6 +159,14 @@ function UploadPage() {
     setStatusText("Uploading...");
 
     try {
+      // Check analysis limit before uploading
+      const limitCheck = await checkAndIncrementAnalysisLimit();
+      if (!limitCheck.allowed) {
+        setError(limitCheck.message || "You've reached your free limit.");
+        setUploading(false);
+        return;
+      }
+
       const fileData = await readFileAsBase64(file);
       setProgress(90);
 

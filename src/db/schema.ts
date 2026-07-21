@@ -54,9 +54,23 @@ export async function runMigrations(): Promise<{ ok: boolean; error?: string }> 
         stripe_session_id TEXT,
         status TEXT NOT NULL DEFAULT 'active',
         analyses_used_this_month INTEGER DEFAULT 0,
+        current_month TEXT,
         created_at TIMESTAMPTZ DEFAULT now(),
         updated_at TIMESTAMPTZ DEFAULT now()
       )
+    `;
+
+    await db`
+      CREATE TABLE IF NOT EXISTS waitlist (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+
+    // Add current_month column if it doesn't exist (for existing DBs)
+    await db`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS current_month TEXT
     `;
 
     return { ok: true };

@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { readFile, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "~/auth";
+import { sql } from "~/db";
 
 // --- Server Functions ---
 
@@ -27,24 +27,16 @@ const submitWaitlist = createServerFn({ method: "POST" })
     return { email: d.email.trim().toLowerCase() };
   })
   .handler(async ({ data }) => {
-    const WAITLIST_PATH = "/home/team/shared/waitlist.json";
-    const entry = { email: data.email, timestamp: new Date().toISOString() };
-
-    let entries: typeof entry[] = [];
-    if (existsSync(WAITLIST_PATH)) {
-      try {
-        entries = JSON.parse(await readFile(WAITLIST_PATH, "utf8"));
-      } catch {
-        entries = [];
-      }
-    }
-
-    if (entries.some((e) => e.email === entry.email)) {
+    const db = sql();
+    const existing = await db`
+      SELECT id FROM waitlist WHERE email = ${data.email}
+    `;
+    if (existing.length > 0) {
       return { success: true, message: "You're already on the list!" };
     }
-
-    entries.push(entry);
-    await writeFile(WAITLIST_PATH, JSON.stringify(entries, null, 2));
+    await db`
+      INSERT INTO waitlist (email) VALUES (${data.email})
+    `;
     return { success: true, message: "You're on the list! We'll be in touch." };
   });
 

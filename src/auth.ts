@@ -1,9 +1,18 @@
-import { createHmac } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { sql } from "~/db";
 import { createServerFn } from "@tanstack/react-start";
 
-const SESSION_SECRET =
-  process.env.SESSION_SECRET || "diamond-ai-dev-secret-change-in-prod";
+function getSessionSecret(): string {
+  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+  const generated = randomBytes(32).toString("hex");
+  console.warn(
+    "[SwingSense] SESSION_SECRET not set — generated a random one for this process. " +
+    "Set SESSION_SECRET in environment for persistent sessions across restarts.",
+  );
+  return generated;
+}
+
+const SESSION_SECRET = getSessionSecret();
 const COOKIE_NAME = "diamond_session";
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 

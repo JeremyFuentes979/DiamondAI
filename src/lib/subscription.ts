@@ -102,11 +102,77 @@ export const incrementAnalysisCount = createServerFn({ method: "POST" }).handler
   if (!user) return;
   try {
     const db = sql();
+    const month = new Date().toISOString().slice(0, 7); // "2026-07"
     await db`
-      INSERT INTO subscriptions (user_id, tier, status, analyses_used_this_month)
-      VALUES (${user.id}, 'free', 'active', 1)
+      INSERT INTO subscriptions (user_id, tier, status, analyses_used_this_month, current_month)
+      VALUES (${user.id}, 'free', 'active', 1, ${month})
       ON CONFLICT (user_id)
-      DO UPDATE SET analyses_used_this_month = subscriptions.analyses_used_this_month + 1,
-                    updated_at = now()`;
+      DO UPDATE SET 
+        analyses_used_this_month = CASE 
+          WHEN subscriptions.current_month = ${month} THEN subscriptions.analyses_used_this_month + 1
+          ELSE 1
+        END,
+        current_month = ${month},
+        updated_at = now()`;
   } catch {}
 });
+
+export const checkAndIncrementAnalysisLimit = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ allowed: boolean; message?: string; tier: SubscriptionTier; used: number; limit: number }> => {
+    const user = await getCurrentUser();
+    if (!user) return { allowed: false, message: "You must be logged in.", tier: "free", used: 0, limit: FREE_TIER_LIMIT };
+    try {
+      const db = sql();
+      const month = new Date().toISOString().slice(0, 7);
+
+      const rows = await db`
+        SELECT tier, analyses_used_this_month, current_month FROM subscriptions WHERE user_id = ${user.id}`;
+      
+      const tier: SubscriptionTier = rows.length > 0 ? rows[0].tier : "free";
+      const dbMonth = rows.length > 0 ? rows[0].current_month : null;
+      const used = (rows.length > 0 && dbMonth === month) ? rows[0].analyses_used_this_month : 0;
+
+      // Paid tiers: always allowed, just increment
+      if (tier === "pro" || tier === "team") {
+        await db`
+          INSERT INTO subscriptions (user_id, tier, status, analyses_used_this_month, current_month)
+          VALUES (${user.id}, ${tier}, 'active', 1, ${month})
+          ON CONFLICT (user_id)
+          DO UPDATE SET 
+            analyses_used_this_month = CASE 
+              WHEN subscriptions.current_month = ${month} THEN subscriptions.analyses_used_this_month + 1
+              ELSE 1
+            END,
+            current_month = ${month},
+            updated_at = now()`;
+        return { allowed: true, tier, used: used + 1, limit: Infinity };
+      }
+
+      // Free tier: check limit
+      if (used >= FREE_TIER_LIMIT) {
+        return { 
+          allowed: false, 
+          message: `You've used all ${FREE_TIER_LIMIT} free analyses this month. Upgrade to Pro for unlimited analyses.`,
+          tier, used, limit: FREE_TIER_LIMIT 
+        };
+      }
+
+      // Allowed: increment
+      await db`
+        INSERT INTO subscriptions (user_id, tier, status, analyses_used_this_month, current_month)
+        VALUES (${user.id}, 'free', 'active', 1, ${month})
+        ON CONFLICT (user_id)
+        DO UPDATE SET 
+          analyses_used_this_month = CASE 
+            WHEN subscriptions.current_month = ${month} THEN subscriptions.analyses_used_this_month + 1
+            ELSE 1
+          END,
+          current_month = ${month},
+          updated_at = now()`;
+
+      return { allowed: true, tier, used: used + 1, limit: FREE_TIER_LIMIT };
+    } catch {
+      return { allowed: false, message: "Something went wrong. Please try again.", tier: "free", used: 0, limit: FREE_TIER_LIMIT };
+    }
+  }
+);
