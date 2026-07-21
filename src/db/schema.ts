@@ -46,6 +46,19 @@ export async function runMigrations(): Promise<{ ok: boolean; error?: string }> 
       )
     `;
 
+    await db`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) NOT NULL UNIQUE,
+        tier TEXT NOT NULL DEFAULT 'free',
+        stripe_session_id TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        analyses_used_this_month INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: err.message };
