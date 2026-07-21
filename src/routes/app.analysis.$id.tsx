@@ -13,18 +13,14 @@ const getVideo = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const user = await getCurrentUser();
     if (!user) throw new Error("You must be logged in.");
-
     const db = sql();
     const rows = await db`
-      SELECT id, user_id, filename, sport_type, action_type, status, created_at
+      SELECT id, user_id, filename, sport_type, action_type, status, file_path, created_at
       FROM videos
       WHERE id = ${data.videoId} AND user_id = ${user.id}
     `;
-
     if (rows.length === 0) throw new Error("Video not found.");
-
     const v = rows[0];
-
     // Fetch analysis if exists
     let analysis = null;
     const analysisRows = await db`
@@ -44,19 +40,19 @@ const getVideo = createServerFn({ method: "GET" })
         created_at: String(a.created_at),
       };
     }
-
     return {
       id: v.id,
       filename: v.filename,
       sport_type: v.sport_type,
       action_type: v.action_type,
       status: v.status,
+      file_path: v.file_path,
       created_at: String(v.created_at),
       analysis,
     };
   });
 
-export const Route = createFileRoute("/app/analysis/")({
+export const Route = createFileRoute("/app/analysis/$id")({
   component: AnalysisPage,
 });
 
@@ -107,11 +103,28 @@ function AnalysisPage() {
     pitch: "Pitch",
     catch: "Catch",
   };
-
   const sportLabels: Record<string, string> = {
     baseball: "Baseball",
     softball: "Softball",
   };
+
+  const scoreColor =
+    video.analysis?.score != null
+      ? video.analysis.score >= 80
+        ? "text-emerald-400"
+        : video.analysis.score >= 60
+          ? "text-amber-400"
+          : "text-red-400"
+      : "text-slate-400";
+
+  const scoreBg =
+    video.analysis?.score != null
+      ? video.analysis.score >= 80
+        ? "bg-emerald-500/10 border-emerald-500/30"
+        : video.analysis.score >= 60
+          ? "bg-amber-500/10 border-amber-500/30"
+          : "bg-red-500/10 border-red-500/30"
+      : "bg-slate-500/10 border-slate-500/30";
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
@@ -135,73 +148,49 @@ function AnalysisPage() {
         Back to Dashboard
       </Link>
 
-      <h1 className="text-2xl font-bold text-white sm:text-3xl">
-        Analysis Results
-      </h1>
-
-      {/* Video Info Card */}
-      <div className="mt-6 rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
-            {sportLabels[video.sport_type] || video.sport_type}
-          </span>
-          <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-400">
-            {actionLabels[video.action_type] || video.action_type}
-          </span>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
-              video.status === "completed"
-                ? "bg-emerald-500/10 text-emerald-400"
-                : video.status === "failed"
-                  ? "bg-red-500/10 text-red-400"
-                  : "bg-yellow-500/10 text-yellow-400"
-            }`}
-          >
-            {video.status === "completed"
-              ? "Completed"
-              : video.status === "failed"
-                ? "Failed"
-                : video.status === "processing"
-                  ? "Processing"
-                  : "Pending"}
-          </span>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-400">
-          <p>
-            <span className="text-slate-500">File:</span> {video.filename}
-          </p>
-          <p>
-            <span className="text-slate-500">Uploaded:</span>{" "}
-            {new Date(video.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}
-          </p>
-        </div>
+      <div className="mb-6 flex flex-wrap items-center gap-3 text-sm text-slate-400">
+        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium">
+          {sportLabels[video.sport_type] || video.sport_type}
+        </span>
+        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium">
+          {actionLabels[video.action_type] || video.action_type}
+        </span>
+        <span className="text-xs text-slate-500">{video.filename}</span>
       </div>
 
-      {/* Analysis Status / Results */}
-      <div className="mt-6 rounded-2xl border border-white/5 bg-slate-900/60 p-6">
-        {video.analysis ? (
+      {/* Analysis Result */}
+      <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-8">
+        {video.status === "completed" && video.analysis ? (
           <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-white">
-                AI Analysis
-              </h2>
-              {video.analysis.score != null && (
-                <span className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-3 py-1 text-sm font-bold text-white">
-                  {video.analysis.score}/100
+            {/* Score */}
+            <div className="flex items-center gap-6">
+              <div
+                className={`flex h-24 w-24 items-center justify-center rounded-2xl border-2 ${scoreBg}`}
+              >
+                <span className={`text-3xl font-black ${scoreColor}`}>
+                  {video.analysis.score}
                 </span>
-              )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Technique Score
+                </p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {video.analysis.score >= 80
+                    ? "Excellent technique!"
+                    : video.analysis.score >= 60
+                      ? "Good foundation, room to grow."
+                      : "Needs focused practice."}
+                </p>
+              </div>
             </div>
+
             {video.analysis.summary && (
-              <p className="mt-4 leading-relaxed text-slate-300">
+              <p className="mt-6 leading-relaxed text-slate-300">
                 {video.analysis.summary}
               </p>
             )}
+
             {video.analysis.detailed_feedback && (
               <div className="mt-6 space-y-4">
                 <h3 className="text-sm font-semibold text-slate-400">
@@ -220,7 +209,7 @@ function AnalysisPage() {
                           ) : (
                             <div>
                               {item.category && (
-                                <p className="text-xs font-semibold text-blue-400 uppercase">
+                                <p className="text-xs font-semibold uppercase text-blue-400">
                                   {item.category}
                                 </p>
                               )}
@@ -235,6 +224,24 @@ function AnalysisPage() {
                       ),
                     )}
                   </ul>
+                ) : typeof video.analysis.detailed_feedback === "object" ? (
+                  <ul className="space-y-3">
+                    {Object.entries(video.analysis.detailed_feedback).map(
+                      ([key, val]: [string, any]) => (
+                        <li
+                          key={key}
+                          className="rounded-lg border border-white/5 bg-slate-800/50 p-4"
+                        >
+                          <p className="text-xs font-semibold uppercase text-blue-400">
+                            {key.replace(/_/g, " ")}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-300">
+                            {typeof val === "string" ? val : JSON.stringify(val)}
+                          </p>
+                        </li>
+                      ),
+                    )}
+                  </ul>
                 ) : (
                   <p className="text-sm text-slate-400">
                     Feedback format unavailable
@@ -242,6 +249,22 @@ function AnalysisPage() {
                 )}
               </div>
             )}
+
+            {/* Action Buttons */}
+            <div className="mt-8 flex gap-3">
+              <Link
+                to="/app/upload"
+                className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:brightness-110"
+              >
+                Upload Another
+              </Link>
+              <Link
+                to="/app"
+                className="rounded-full border border-white/10 px-6 py-2.5 text-sm font-medium text-slate-300 transition-all hover:border-white/20 hover:text-white"
+              >
+                Back to Dashboard
+              </Link>
+            </div>
           </div>
         ) : video.status === "pending" || video.status === "processing" ? (
           <div className="py-10 text-center">
