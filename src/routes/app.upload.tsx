@@ -6,6 +6,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { getCurrentUser } from "~/auth";
 import { sql } from "~/db";
+import { runAnalysis } from "~/lib/analysis";
 
 const UPLOAD_DIR = "/home/team/shared/uploads";
 
@@ -132,9 +133,12 @@ function UploadPage() {
     });
   };
 
+  const [statusText, setStatusText] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setStatusText("");
 
     if (!sportType) {
       setError("Please select a sport.");
@@ -151,6 +155,7 @@ function UploadPage() {
 
     setUploading(true);
     setProgress(0);
+    setStatusText("Uploading...");
 
     try {
       const fileData = await readFileAsBase64(file);
@@ -166,10 +171,33 @@ function UploadPage() {
       });
 
       setProgress(100);
+      setStatusText("Analyzing...");
+
+      // Trigger AI analysis
+      try {
+        const analysisResult = await runAnalysis({
+          data: { videoId: result.id },
+        });
+        if (analysisResult.success) {
+          setStatusText("Complete!");
+          // Brief delay so user sees the "Complete!" message
+          setTimeout(() => {
+            navigate({ to: `/app/analysis/${result.id}` });
+          }, 600);
+          return;
+        }
+      } catch (analysisErr: any) {
+        // Analysis failed but upload succeeded — still navigate to analysis page
+        // The page will show the failed status
+        navigate({ to: `/app/analysis/${result.id}` });
+        return;
+      }
+
       navigate({ to: `/app/analysis/${result.id}` });
     } catch (err: any) {
       setError(err.message || "Upload failed. Please try again.");
       setProgress(0);
+      setStatusText("");
     } finally {
       setUploading(false);
     }
@@ -349,7 +377,7 @@ function UploadPage() {
           <div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-400">
-                {progress < 90 ? "Reading file..." : "Saving..."}
+                {statusText || (progress < 90 ? "Reading file..." : "Saving...")}
               </span>
               <span className="text-blue-400">{progress}%</span>
             </div>
