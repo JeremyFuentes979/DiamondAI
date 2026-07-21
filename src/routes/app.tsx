@@ -133,7 +133,7 @@ function AppLayout() {
             to="/app"
             className="flex items-center gap-2 text-lg font-bold text-white"
           >
-            <img src="/logo.png" alt="SwingSense" class="nav-logo" />
+            <img src="/logo.png" alt="SwingSense" className="nav-logo" />
             SwingSense
           </Link>
           <div className="flex items-center gap-4">

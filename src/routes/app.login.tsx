@@ -37,7 +37,7 @@ function LoginPage() {
             to="/"
             className="inline-flex items-center gap-2 text-xl font-bold text-white"
           >
-            <img src="/logo.png" alt="SwingSense" class="nav-logo" />
+            <img src="/logo.png" alt="SwingSense" className="nav-logo" />
             SwingSense
           </Link>
         </div>

@@ -60,7 +60,7 @@ function NavBar({ businessName }: { businessName: string }) {
     <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-slate-950/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <a href="#" className="flex items-center gap-2 text-xl font-bold text-white">
-          <img src="/logo.png" alt="SwingSense" class="nav-logo" />
+          <img src="/logo.png" alt="SwingSense" className="nav-logo" />
           {businessName}
         </a>
         <div className="hidden items-center gap-8 text-sm font-medium text-slate-300 sm:flex">
@@ -455,7 +455,7 @@ function Footer({ businessName }: { businessName: string }) {
     <footer className="border-t border-white/5 py-10">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="" class="h-6 w-6 rounded object-contain opacity-70" />
+          <img src="/logo.png" alt="" className="h-6 w-6 rounded object-contain opacity-70" />
           <p className="text-sm text-slate-500">
             &copy; {new Date().getFullYear()} {businessName}. All rights reserved.
           </p>
