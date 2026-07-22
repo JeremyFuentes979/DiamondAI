@@ -138,6 +138,12 @@ function AppLayout() {
           </Link>
           <div className="flex items-center gap-4">
             <Link
+              to="/app/subscription"
+              className="text-sm text-slate-400 transition-colors hover:text-white"
+            >
+              Subscription
+            </Link>
+            <Link
               to="/app/upload"
               className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-1.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition-all hover:brightness-110"
             >

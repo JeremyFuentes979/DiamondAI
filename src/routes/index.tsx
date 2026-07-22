@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "~/auth";
 import { sql } from "~/db";
+import { STRIPE_PAYMENT_LINKS } from "~/lib/subscription";
 
 // --- Server Functions ---
 
@@ -285,6 +286,7 @@ function Pricing() {
       desc: "Get started with AI-powered feedback.",
       features: ["3 analyses per month", "Basic feedback", "Single sport profile"],
       cta: "Get Started Free",
+      href: "#waitlist",
       gradient: "from-slate-600 to-slate-500",
       popular: false,
     },
@@ -301,6 +303,8 @@ function Pricing() {
         "Multi-sport support",
       ],
       cta: "Start Free Trial",
+      href: STRIPE_PAYMENT_LINKS.pro_monthly,
+      annualHref: STRIPE_PAYMENT_LINKS.pro_annual,
       gradient: "from-amber-500 to-orange-500",
       popular: true,
     },
@@ -317,6 +321,7 @@ function Pricing() {
         "Priority support",
       ],
       cta: "Start Free Trial",
+      href: STRIPE_PAYMENT_LINKS.team,
       gradient: "from-amber-500 to-orange-500",
       popular: false,
     },
@@ -369,11 +374,23 @@ function Pricing() {
                 ))}
               </ul>
               <a
-                href="#waitlist"
+                href={tier.href}
+                target={tier.href.startsWith("http") ? "_blank" : undefined}
+                rel={tier.href.startsWith("http") ? "noopener" : undefined}
                 className={`block rounded-full bg-gradient-to-r ${tier.gradient} px-6 py-3 text-center text-sm font-semibold text-white shadow-lg transition-all hover:brightness-110`}
               >
                 {tier.cta}
               </a>
+              {tier.annualHref && (
+                <a
+                  href={tier.annualHref}
+                  target="_blank"
+                  rel="noopener"
+                  className="mt-2 block text-center text-xs text-slate-400 underline underline-offset-2 transition-colors hover:text-amber-300"
+                >
+                  or save with annual — $99/yr
+                </a>
+              )}
             </div>
           ))}
         </div>
