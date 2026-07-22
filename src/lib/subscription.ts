@@ -5,10 +5,13 @@ import { sql } from "~/db";
 export const FREE_TIER_LIMIT = 3;
 
 export const STRIPE_PAYMENT_LINKS: Record<string, string> = {
-  pro_monthly: "https://buy.stripe.com/00wcN56pB9235T54HzfnO0b",
-  pro_annual: "https://buy.stripe.com/bJe4gz9BN5PR4P15LDfnO0c",
-  team: "https://buy.stripe.com/00wcN515h5PR95hde5fnO0d",
+  pro_monthly: "https://buy.stripe.com/bJe00jcNZ4LNdlx5LDfnO0e",
+  pro_annual: "https://buy.stripe.com/5kQ6oHcNZ3HJgxJa1TfnO0f",
+  team: "https://buy.stripe.com/00w6oHaFRcef6X98XPfnO0g",
 };
+
+/** Stripe Customer Portal (for managing existing subscriptions) */
+export const STRIPE_CUSTOMER_PORTAL_URL = "https://billing.stripe.com/p/login/placeholder";
 
 export type SubscriptionTier = "free" | "pro" | "team";
 export type SubscriptionStatus = "active" | "canceled" | "past_due";
