@@ -292,36 +292,52 @@ function Pricing() {
     },
     {
       name: "Pro",
-      price: "$12",
+      price: "$24.99",
       period: "/mo",
       desc: "Unlock the full SwingSense experience.",
       features: [
         "Unlimited analyses",
-        "Deep breakdowns",
-        "Side-by-side comparisons",
+        "AI voice coach",
+        "Visual overlays",
+        "Elite comparisons",
         "Progress tracking",
         "Multi-sport support",
       ],
       cta: "Start Free Trial",
-      href: STRIPE_PAYMENT_LINKS.pro_monthly,
-      annualHref: STRIPE_PAYMENT_LINKS.pro_annual,
+      href: STRIPE_PAYMENT_LINKS.pro,
       gradient: "from-amber-500 to-orange-500",
-      popular: true,
+      popular: false,
     },
     {
-      name: "Team / Coach",
-      price: "$39",
+      name: "Team",
+      price: "$199",
       period: "/mo",
       desc: "For coaches and teams managing multiple athletes.",
       features: [
         "Everything in Pro",
-        "Manage up to 20 players",
-        "Aggregated progress reports",
+        "Manage up to 20 athletes",
         "Team dashboard",
+        "Aggregated reports",
         "Priority support",
       ],
       cta: "Start Free Trial",
       href: STRIPE_PAYMENT_LINKS.team,
+      gradient: "from-amber-500 to-orange-500",
+      popular: false,
+    },
+    {
+      name: "Academy",
+      price: "$499",
+      period: "/mo",
+      desc: "For training facilities and academies.",
+      features: [
+        "Everything in Team",
+        "White-label option",
+        "Recruiting profiles",
+        "Certified AI coaching curriculum",
+      ],
+      cta: "Start Free Trial",
+      href: STRIPE_PAYMENT_LINKS.academy,
       gradient: "from-amber-500 to-orange-500",
       popular: false,
     },
@@ -340,7 +356,7 @@ function Pricing() {
             Start free. Upgrade when you're ready for more.
           </p>
         </div>
-        <div className="mt-16 grid gap-8 lg:grid-cols-3">
+        <div className="mt-16 grid gap-8 lg:grid-cols-2">
           {tiers.map((tier, i) => (
             <div
               key={i}
@@ -381,16 +397,6 @@ function Pricing() {
               >
                 {tier.cta}
               </a>
-              {tier.annualHref && (
-                <a
-                  href={tier.annualHref}
-                  target="_blank"
-                  rel="noopener"
-                  className="mt-2 block text-center text-xs text-slate-400 underline underline-offset-2 transition-colors hover:text-amber-300"
-                >
-                  or save with annual — $99/yr
-                </a>
-              )}
             </div>
           ))}
         </div>
