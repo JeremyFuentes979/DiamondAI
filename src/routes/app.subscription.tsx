@@ -15,7 +15,7 @@ export const Route = createFileRoute("/app/subscription")({
 
 // --- Types ---
 
-type SubscriptionTier = "free" | "pro" | "team";
+type SubscriptionTier = "free" | "pro" | "team" | "academy";
 
 interface SubData {
   tier: SubscriptionTier;
@@ -127,11 +127,13 @@ function SubscriptionPage() {
     sub.tier === "pro"
       ? "Pro"
       : sub.tier === "team"
-        ? "Team / Coach"
-        : "Free";
+        ? "Team"
+        : sub.tier === "academy"
+          ? "Academy"
+          : "Free";
 
   const tierGradient =
-    sub.tier === "pro" || sub.tier === "team"
+    sub.tier === "pro" || sub.tier === "team" || sub.tier === "academy"
       ? "from-amber-500 to-orange-500"
       : "from-slate-600 to-slate-500";
 
@@ -189,7 +191,7 @@ function SubscriptionPage() {
               <span
                 className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${tierGradient} text-lg`}
               >
-                {sub.tier === "pro" ? "⚡" : sub.tier === "team" ? "🏟️" : "🎯"}
+                {sub.tier === "pro" ? "⚡" : sub.tier === "team" ? "🏟️" : sub.tier === "academy" ? "🎓" : "🎯"}
               </span>
               <div>
                 <h2 className="text-xl font-semibold text-white">
@@ -223,8 +225,10 @@ function SubscriptionPage() {
               {sub.tier === "free"
                 ? "$0"
                 : sub.tier === "pro"
-                  ? "$12"
-                  : "$39"}
+                  ? "$24.99"
+                  : sub.tier === "team"
+                    ? "$199"
+                    : "$499"}
             </p>
             <p className="text-sm text-slate-400">
               {sub.tier === "free" ? "/mo" : "/mo"}
@@ -277,25 +281,22 @@ function SubscriptionPage() {
         </h3>
 
         {sub.tier === "free" ? (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* Pro Monthly */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {/* Pro */}
             <a
-              href={STRIPE_PAYMENT_LINKS.pro_monthly}
+              href={STRIPE_PAYMENT_LINKS.pro}
               target="_blank"
               rel="noopener"
               className="flex flex-col rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 transition-all hover:border-amber-500/50 hover:bg-amber-500/10"
             >
               <div className="mb-1 flex items-center justify-between">
                 <span className="font-semibold text-white">Pro</span>
-                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-300">
-                  Recommended
-                </span>
               </div>
               <p className="mb-3 text-sm text-slate-400">
-                Unlimited analyses, deep breakdowns, progress tracking.
+                Unlimited analyses, AI voice coach, progress tracking.
               </p>
               <div className="mb-3">
-                <span className="text-2xl font-bold text-white">$12</span>
+                <span className="text-2xl font-bold text-white">$24.99</span>
                 <span className="text-slate-400">/mo</span>
               </div>
               <span className="mt-auto inline-block rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:brightness-110">
@@ -311,15 +312,13 @@ function SubscriptionPage() {
               className="flex flex-col rounded-xl border border-white/10 bg-slate-800/40 p-5 transition-all hover:border-white/20 hover:bg-slate-800/60"
             >
               <div className="mb-1 flex items-center justify-between">
-                <span className="font-semibold text-white">
-                  Team / Coach
-                </span>
+                <span className="font-semibold text-white">Team</span>
               </div>
               <p className="mb-3 text-sm text-slate-400">
-                Everything in Pro, manage up to 20 players, team reports.
+                Everything in Pro, manage up to 20 athletes, team dashboard.
               </p>
               <div className="mb-3">
-                <span className="text-2xl font-bold text-white">$39</span>
+                <span className="text-2xl font-bold text-white">$199</span>
                 <span className="text-slate-400">/mo</span>
               </div>
               <span className="mt-auto inline-block rounded-full bg-white/10 px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-white/20">
@@ -327,25 +326,22 @@ function SubscriptionPage() {
               </span>
             </a>
 
-            {/* Pro Annual */}
+            {/* Academy */}
             <a
-              href={STRIPE_PAYMENT_LINKS.pro_annual}
+              href={STRIPE_PAYMENT_LINKS.academy}
               target="_blank"
               rel="noopener"
-              className="col-span-full flex flex-col rounded-xl border border-white/10 bg-slate-800/40 p-5 transition-all hover:border-white/20 hover:bg-slate-800/60"
+              className="flex flex-col rounded-xl border border-white/10 bg-slate-800/40 p-5 transition-all hover:border-white/20 hover:bg-slate-800/60"
             >
               <div className="mb-1 flex items-center justify-between">
-                <span className="font-semibold text-white">Pro Annual</span>
-                <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300">
-                  Save 31%
-                </span>
+                <span className="font-semibold text-white">Academy</span>
               </div>
               <p className="mb-3 text-sm text-slate-400">
-                All Pro features, billed yearly. Best value.
+                White-label, recruiting profiles, certified curriculum.
               </p>
               <div className="mb-3">
-                <span className="text-2xl font-bold text-white">$99</span>
-                <span className="text-slate-400">/yr</span>
+                <span className="text-2xl font-bold text-white">$499</span>
+                <span className="text-slate-400">/mo</span>
               </div>
               <span className="mt-auto inline-block rounded-full bg-white/10 px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-white/20">
                 Start Free Trial

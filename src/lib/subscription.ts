@@ -5,15 +5,15 @@ import { sql } from "~/db";
 export const FREE_TIER_LIMIT = 3;
 
 export const STRIPE_PAYMENT_LINKS: Record<string, string> = {
-  pro_monthly: "https://buy.stripe.com/bJe00jcNZ4LNdlx5LDfnO0e",
-  pro_annual: "https://buy.stripe.com/5kQ6oHcNZ3HJgxJa1TfnO0f",
-  team: "https://buy.stripe.com/00w6oHaFRcef6X98XPfnO0g",
+  pro: "https://buy.stripe.com/eVq8wP4ht0vx4P17TLfnO0h",
+  team: "https://buy.stripe.com/cNi28raFR4LN1CP2zrfnO0j",
+  academy: "https://buy.stripe.com/00w00j7tFdijftFgqhfnO0i",
 };
 
 /** Stripe Customer Portal (for managing existing subscriptions) */
 export const STRIPE_CUSTOMER_PORTAL_URL = "https://billing.stripe.com/p/login/placeholder";
 
-export type SubscriptionTier = "free" | "pro" | "team";
+export type SubscriptionTier = "free" | "pro" | "team" | "academy";
 export type SubscriptionStatus = "active" | "canceled" | "past_due";
 
 export interface Subscription {
@@ -52,9 +52,9 @@ export const getUserSubscription = createServerFn({ method: "GET" }).handler(
 export const createCheckoutSession = createServerFn({ method: "POST" })
   .validator((data: unknown) => {
     const d = data as { tier?: string };
-    if (!d.tier || !["pro_monthly", "pro_annual", "team"].includes(d.tier))
+    if (!d.tier || !["pro", "team", "academy"].includes(d.tier))
       throw new Error("Invalid subscription tier.");
-    return { tier: d.tier as "pro_monthly" | "pro_annual" | "team" };
+    return { tier: d.tier as "pro" | "team" | "academy" };
   })
   .handler(async ({ data }) => {
     const user = await getCurrentUser();
@@ -65,9 +65,9 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 export const upgradeSubscription = createServerFn({ method: "POST" })
   .validator((data: unknown) => {
     const d = data as { tier?: string };
-    if (!d.tier || !["pro", "team"].includes(d.tier))
+    if (!d.tier || !["pro", "team", "academy"].includes(d.tier))
       throw new Error("Invalid tier.");
-    return { tier: d.tier as "pro" | "team" };
+    return { tier: d.tier as "pro" | "team" | "academy" };
   })
   .handler(async ({ data }) => {
     const user = await getCurrentUser();
@@ -91,7 +91,7 @@ export const checkUploadLimit = createServerFn({ method: "GET" }).handler(
         SELECT tier, analyses_used_this_month FROM subscriptions WHERE user_id = ${user.id}`;
       const tier: SubscriptionTier = rows.length > 0 ? rows[0].tier : "free";
       const used = rows.length > 0 ? rows[0].analyses_used_this_month : 0;
-      if (tier === "pro" || tier === "team")
+      if (tier === "pro" || tier === "team" || tier === "academy")
         return { allowed: true, tier, used, limit: Infinity };
       return { allowed: used < FREE_TIER_LIMIT, tier, used, limit: FREE_TIER_LIMIT };
     } catch {
@@ -136,7 +136,7 @@ export const checkAndIncrementAnalysisLimit = createServerFn({ method: "POST" })
       const used = (rows.length > 0 && dbMonth === month) ? rows[0].analyses_used_this_month : 0;
 
       // Paid tiers: always allowed, just increment
-      if (tier === "pro" || tier === "team") {
+      if (tier === "pro" || tier === "team" || tier === "academy") {
         await db`
           INSERT INTO subscriptions (user_id, tier, status, analyses_used_this_month, current_month)
           VALUES (${user.id}, ${tier}, 'active', 1, ${month})
