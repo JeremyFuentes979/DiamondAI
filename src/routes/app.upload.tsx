@@ -1,76 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useState, useRef, useCallback } from "react";
-import { writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { getCurrentUser } from "~/auth";
-import { sql } from "~/db";
 import { runAnalysis } from "~/lib/analysis";
 import { checkAndIncrementAnalysisLimit } from "~/lib/subscription";
 
-const UPLOAD_DIR = "/home/team/shared/uploads";
-
-const uploadVideo = createServerFn({ method: "POST" })
-  .validator((data: unknown) => {
-    const d = data as {
-      sportType?: string;
-      actionType?: string;
-      fileName?: string;
-      fileData?: string; // base64 encoded
-    };
-    if (!d.sportType || !["baseball", "softball"].includes(d.sportType)) {
-      throw new Error("Please select a valid sport.");
-    }
-    if (!d.actionType || !["swing", "pitch", "catch"].includes(d.actionType)) {
-      throw new Error("Please select a valid action type.");
-    }
-    if (!d.fileName || !d.fileData) {
-      throw new Error("Please select a video file.");
-    }
-    return {
-      sportType: d.sportType as "baseball" | "softball",
-      actionType: d.actionType as "swing" | "pitch" | "catch",
-      fileName: d.fileName,
-      fileData: d.fileData,
-    };
-  })
-  .handler(async ({ data }) => {
-    const user = await getCurrentUser();
-    if (!user) throw new Error("You must be logged in to upload.");
-
-    // Ensure upload directory exists
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true });
-    }
-
-    // Generate unique filename
-    const ext = data.fileName.split(".").pop() || "mp4";
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const filePath = join(UPLOAD_DIR, uniqueName);
-
-    // Decode base64 and write file
-    const buffer = Buffer.from(data.fileData, "base64");
-    await writeFile(filePath, buffer);
-
-    // Create DB record
-    const db = sql();
-    const rows = await db`
-      INSERT INTO videos (user_id, filename, sport_type, action_type, status, file_path)
-      VALUES (${user.id}, ${data.fileName}, ${data.sportType}, ${data.actionType}, 'pending', ${filePath})
-      RETURNING id, user_id, filename, sport_type, action_type, status, file_path, created_at
-    `;
-
-    const video = rows[0];
-    return {
-      id: video.id,
-      filename: video.filename,
-      sport_type: video.sport_type,
-      action_type: video.action_type,
-      status: video.status,
-      created_at: String(video.created_at),
-    };
-  });
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
 
 export const Route = createFileRoute("/app/upload")({
   component: UploadPage,
@@ -88,6 +21,7 @@ function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -98,43 +32,89 @@ function UploadPage() {
     if (dropped) {
       const valid = [".mp4", ".mov", ".webm"];
       const ext = "." + dropped.name.split(".").pop()?.toLowerCase();
-      if (valid.includes(ext)) {
-        setFile(dropped);
-        setError("");
-      } else {
+      if (!valid.includes(ext)) {
         setError("Please upload an MP4, MOV, or WebM video file.");
+        return;
       }
+      if (dropped.size > MAX_FILE_SIZE) {
+        setError(
+          `File is too large (${(dropped.size / (1024 * 1024)).toFixed(1)} MB). Maximum is 500 MB.`,
+        );
+        return;
+      }
+      setFile(dropped);
+      setError("");
     }
   }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (selected) {
+      if (selected.size > MAX_FILE_SIZE) {
+        setError(
+          `File is too large (${(selected.size / (1024 * 1024)).toFixed(1)} MB). Maximum is 500 MB.`,
+        );
+        return;
+      }
       setFile(selected);
       setError("");
     }
   };
 
-  const readFileAsBase64 = (file: File): Promise<string> => {
+  const uploadFile = (
+    formData: FormData,
+  ): Promise<{
+    id: string;
+    filename: string;
+    sport_type: string;
+    action_type: string;
+    status: string;
+    created_at: string;
+  }> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        // Remove data:...;base64, prefix
-        const base64 = result.split(",")[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.onprogress = (e) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable) {
-          setProgress(Math.round((e.loaded / e.total) * 80)); // 0-80% for reading
+          setProgress(Math.round((e.loaded / e.total) * 90)); // 0-90% for upload
         }
-      };
-      reader.readAsDataURL(file);
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            if (result.error) {
+              reject(new Error(result.error));
+            } else {
+              resolve(result);
+            }
+          } catch {
+            reject(new Error("Invalid response from server."));
+          }
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            reject(new Error(err.error || `Upload failed (${xhr.status}).`));
+          } catch {
+            reject(new Error(`Upload failed (${xhr.status}).`));
+          }
+        }
+      });
+
+      xhr.addEventListener("error", () => {
+        reject(new Error("Network error. Please check your connection."));
+      });
+
+      xhr.addEventListener("abort", () => {
+        reject(new Error("Upload was cancelled."));
+      });
+
+      xhr.open("POST", "/api/upload");
+      // Don't set Content-Type — browser sets it automatically with boundary
+      xhr.send(formData);
     });
   };
-
-  const [statusText, setStatusText] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,6 +134,14 @@ function UploadPage() {
       return;
     }
 
+    // Client-side size validation (double-check)
+    if (file.size > MAX_FILE_SIZE) {
+      setError(
+        `File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum is 500 MB.`,
+      );
+      return;
+    }
+
     setUploading(true);
     setProgress(0);
     setStatusText("Uploading...");
@@ -167,18 +155,13 @@ function UploadPage() {
         return;
       }
 
-      const fileData = await readFileAsBase64(file);
-      setProgress(90);
+      // Build FormData and upload via multipart/form-data
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sportType", sportType);
+      formData.append("actionType", actionType);
 
-      const result = await uploadVideo({
-        data: {
-          sportType,
-          actionType,
-          fileName: file.name,
-          fileData,
-        },
-      });
-
+      const result = await uploadFile(formData);
       setProgress(100);
       setStatusText("Analyzing...");
 
@@ -189,15 +172,13 @@ function UploadPage() {
         });
         if (analysisResult.success) {
           setStatusText("Complete!");
-          // Brief delay so user sees the "Complete!" message
           setTimeout(() => {
             navigate({ to: `/app/analysis/${result.id}` });
           }, 600);
           return;
         }
       } catch (analysisErr: any) {
-        // Analysis failed but upload succeeded — still navigate to analysis page
-        // The page will show the failed status
+        // Analysis failed but upload succeeded — still navigate
         navigate({ to: `/app/analysis/${result.id}` });
         return;
       }
@@ -386,7 +367,7 @@ function UploadPage() {
           <div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-400">
-                {statusText || (progress < 90 ? "Reading file..." : "Saving...")}
+                {statusText || (progress < 90 ? "Uploading..." : "Saving...")}
               </span>
               <span className="text-amber-400">{progress}%</span>
             </div>
