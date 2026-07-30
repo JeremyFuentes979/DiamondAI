@@ -10,6 +10,7 @@
 // the takeover works across user boundaries.
 import handler from "./dist/server/server.js";
 import { handleUpload } from "./src/lib/upload-handler.ts";
+import { handleStripeWebhook } from "./src/lib/stripe-webhook.ts";
 
 // Pinned, NOT read from the environment. The published preview URL
 // (<label>.<PUBLIC_SITE_DOMAIN>) is reverse-proxied to 0.0.0.0:3000 inside the
@@ -45,6 +46,9 @@ for (let attempt = 1; ; attempt++) {
         // API routes
         if (pathname === "/api/upload" && req.method === "POST") {
           return handleUpload(req);
+        }
+        if (pathname === "/api/stripe-webhook" && req.method === "POST") {
+          return handleStripeWebhook(req);
         }
         if (pathname !== "/") {
           const file = Bun.file(CLIENT_DIR + pathname);
