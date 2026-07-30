@@ -6,6 +6,76 @@ import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
+// --- Milestone check helper (runs inside the analysis server function) ---
+
+async function checkAndUnlockMilestones(db: ReturnType<typeof sql>, userId: string) {
+  // Count analyses
+  const countRows = await db`
+    SELECT COUNT(*) as cnt FROM analyses WHERE user_id = ${userId}
+  `;
+  const totalAnalyses = Number(countRows[0]?.cnt || 0);
+
+  // Get all scores
+  const scoreRows = await db`
+    SELECT score FROM analyses
+    WHERE user_id = ${userId} AND score IS NOT NULL
+  `;
+  const scores = scoreRows.map((r: any) => Number(r.score));
+
+  // Get existing milestones
+  const existingRows = await db`
+    SELECT title FROM milestones WHERE user_id = ${userId}
+  `;
+  const existingTitles = new Set(existingRows.map((r: any) => r.title));
+
+  const milestoneDefinitions: { title: string; description: string; check: () => boolean }[] = [
+    {
+      title: "Welcome to SwingSense!",
+      description: "Completed your first video analysis.",
+      check: () => totalAnalyses >= 1,
+    },
+    {
+      title: "Getting the Hang of It",
+      description: "Completed 5 analyses.",
+      check: () => totalAnalyses >= 5,
+    },
+    {
+      title: "Consistent Hitter",
+      description: "Completed 25 analyses.",
+      check: () => totalAnalyses >= 25,
+    },
+    {
+      title: "Road to 100",
+      description: "Completed 100 analyses.",
+      check: () => totalAnalyses >= 100,
+    },
+    {
+      title: "Breaking 70",
+      description: "Achieved a score of 70 or above.",
+      check: () => scores.some((s) => s >= 70),
+    },
+    {
+      title: "Breaking 85",
+      description: "Achieved a score of 85 or above.",
+      check: () => scores.some((s) => s >= 85),
+    },
+    {
+      title: "Elite Status",
+      description: "Achieved a score of 95 or above.",
+      check: () => scores.some((s) => s >= 95),
+    },
+  ];
+
+  for (const milestone of milestoneDefinitions) {
+    if (!existingTitles.has(milestone.title) && milestone.check()) {
+      await db`
+        INSERT INTO milestones (user_id, title, description)
+        VALUES (${userId}, ${milestone.title}, ${milestone.description})
+      `;
+    }
+  }
+}
+
 function extractFrames(videoPath: string, frameCount: number = 7): string[] {
   const tmpDir = join(tmpdir(), `swingsense-frames-${Date.now()}`);
   mkdirSync(tmpDir, { recursive: true });
@@ -205,10 +275,23 @@ Respond with ONLY a valid JSON object in exactly this format — no markdown, no
       }
 
       // Save analysis to DB
-      await db`
+      const analysisRows = await db`
         INSERT INTO analyses (video_id, user_id, summary, detailed_feedback, score)
         VALUES (${video.id}, ${user.id}, ${summary}, ${JSON.stringify(detailedFeedback)}, ${score})
+        RETURNING id
       `;
+      const analysisId = analysisRows[0]?.id;
+
+      // Log performance metric
+      if (analysisId) {
+        await db`
+          INSERT INTO performance_metrics (user_id, analysis_id, metric_name, metric_value)
+          VALUES (${user.id}, ${analysisId}, 'overall_score', ${score})
+        `;
+      }
+
+      // Check and unlock milestones
+      await checkAndUnlockMilestones(db, user.id);
 
       // Update video status
       await db`

@@ -73,6 +73,54 @@ export async function runMigrations(): Promise<{ ok: boolean; error?: string }> 
       ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS current_month TEXT
     `;
 
+    await db`
+      CREATE TABLE IF NOT EXISTS athlete_profiles (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) NOT NULL UNIQUE,
+        sport_type TEXT NOT NULL DEFAULT 'baseball',
+        position TEXT,
+        skill_level TEXT DEFAULT 'beginner',
+        age_group TEXT,
+        goals TEXT,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+
+    await db`
+      CREATE TABLE IF NOT EXISTS performance_metrics (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) NOT NULL,
+        analysis_id UUID REFERENCES analyses(id),
+        metric_name TEXT NOT NULL,
+        metric_value NUMERIC NOT NULL,
+        recorded_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+
+    await db`
+      CREATE TABLE IF NOT EXISTS milestones (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        unlocked_at TIMESTAMPTZ DEFAULT now()
+      )
+    `;
+
+    // Backfill performance_metrics from existing analyses (only if metrics table is empty)
+    const metricCount = await db`
+      SELECT COUNT(*) as cnt FROM performance_metrics
+    `;
+    if (Number(metricCount[0]?.cnt || 0) === 0) {
+      await db`
+        INSERT INTO performance_metrics (user_id, analysis_id, metric_name, metric_value, recorded_at)
+        SELECT a.user_id, a.id, 'overall_score', a.score::numeric, a.created_at
+        FROM analyses a
+        WHERE a.score IS NOT NULL
+      `;
+    }
+
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: err.message };

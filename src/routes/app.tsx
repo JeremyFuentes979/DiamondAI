@@ -138,6 +138,12 @@ function AppLayout() {
           </Link>
           <div className="flex items-center gap-4">
             <Link
+              to="/app/profile"
+              className="text-sm text-slate-400 transition-colors hover:text-white"
+            >
+              Profile
+            </Link>
+            <Link
               to="/app/subscription"
               className="text-sm text-slate-400 transition-colors hover:text-white"
             >
