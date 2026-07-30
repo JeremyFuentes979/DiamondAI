@@ -5,6 +5,7 @@ import { execSync } from "node:child_process";
 import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import ffmpegPath from "ffmpeg-static";
 
 // --- Milestone check helper (runs inside the analysis server function) ---
 
@@ -76,19 +77,22 @@ async function checkAndUnlockMilestones(db: ReturnType<typeof sql>, userId: stri
   }
 }
 
+function getDuration(videoPath: string): number {
+  const output = execSync(
+    `"${ffmpegPath}" -i "${videoPath}" 2>&1 | grep Duration`,
+    { encoding: "utf-8" }
+  );
+  // Parse "Duration: 00:00:05.00" → seconds
+  const match = output.match(/Duration: (\d+):(\d+):(\d+\.\d+)/);
+  if (!match) throw new Error("Cannot determine video duration");
+  return parseInt(match[1]) * 3600 + parseInt(match[2]) * 60 + parseFloat(match[3]);
+}
+
 function extractFrames(videoPath: string, frameCount: number = 7): string[] {
   const tmpDir = join(tmpdir(), `swingsense-frames-${Date.now()}`);
   mkdirSync(tmpDir, { recursive: true });
 
-  // Get video duration
-  const durationStr = execSync(
-    `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videoPath}"`,
-    { encoding: "utf-8" }
-  ).trim();
-  const duration = parseFloat(durationStr);
-  if (isNaN(duration) || duration <= 0) {
-    throw new Error("Cannot determine video duration");
-  }
+  const duration = getDuration(videoPath);
 
   // Extract frames at evenly spaced intervals, skipping first/last 10%
   const startPercent = 0.1;
@@ -102,7 +106,7 @@ function extractFrames(videoPath: string, frameCount: number = 7): string[] {
     const framePath = join(tmpDir, `frame_${i + 1}.jpg`);
 
     execSync(
-      `ffmpeg -ss ${seekTime.toFixed(2)} -i "${videoPath}" -vframes 1 -q:v 2 "${framePath}" -y 2>/dev/null`,
+      `"${ffmpegPath}" -ss ${seekTime.toFixed(2)} -i "${videoPath}" -vframes 1 -q:v 2 "${framePath}" -y 2>/dev/null`,
       { encoding: "utf-8" }
     );
 
