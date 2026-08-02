@@ -11,6 +11,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import handler from "./dist/server/server.js";
+import { handleUpload } from "./src/lib/upload-handler.ts";
+import { handleStripeWebhook } from "./src/lib/stripe-webhook.ts";
 
 const fetchHandler = handler as {
   fetch: (request: Request) => Response | Promise<Response>;
@@ -42,7 +44,28 @@ export default async function vercelHandler(
   res: ServerResponse,
 ): Promise<void> {
   try {
-    const webRes = await fetchHandler.fetch(toWebRequest(req));
+    const webReq = toWebRequest(req);
+    const url = new URL(webReq.url);
+
+    // API routes — handled before the SSR handler
+    if (url.pathname === "/api/upload" && webReq.method === "POST") {
+      const webRes = await handleUpload(webReq);
+      res.statusCode = webRes.status;
+      webRes.headers.forEach((value, key) => res.setHeader(key, value));
+      const body = await webRes.text();
+      res.end(body);
+      return;
+    }
+    if (url.pathname === "/api/stripe-webhook" && webReq.method === "POST") {
+      const webRes = await handleStripeWebhook(webReq);
+      res.statusCode = webRes.status;
+      webRes.headers.forEach((value, key) => res.setHeader(key, value));
+      const body = await webRes.text();
+      res.end(body);
+      return;
+    }
+
+    const webRes = await fetchHandler.fetch(webReq);
     res.statusCode = webRes.status;
     webRes.headers.forEach((value, key) => res.setHeader(key, value));
     if (webRes.body) {
@@ -55,8 +78,6 @@ export default async function vercelHandler(
     }
     res.end();
   } catch (error) {
-    // Log the detail server-side (captured by the host's function logs); never
-    // return a stack trace to the public visitor of the site.
     console.error("[team-site] SSR request failed", error);
     res.statusCode = 500;
     res.setHeader("content-type", "text/plain");
